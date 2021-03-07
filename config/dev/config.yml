@@ -1,0 +1,23 @@
+DisablePathCorrection: false
+EnablePathEscape: false
+FireMethodNotAllowed: true
+DisableBodyConsumptionOnUnmarshal: true
+TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
+Charset: UTF-8
+Other:
+  DatabaseType: mysql
+  DatabaseDsn: "root:123456@tcp(localhost:3306)/public?charset=utf8mb4&parseTime=True&loc=Local"
+  RedisDsn: "localhost:6379"
+  RedisPassword: "123456"
+  RedisDb: 0
+  OSSBucket: file-exchange-algo
+  OSSEndpoint: oss-cn-shanghai.aliyuncs.com
+  OSSEndpointInternal: oss-cn-shanghai-internal.aliyuncs.com
+  OSSAccessKeyID: LTAI4FcWmZc4qNLnSdw7mp3A
+  OSSAccessKeySecret: pOqFJ3oZO0CbtCKBKvMXyzln4MNrBH
+  OSSBucketName: file-exchange-algo
+  OSSRegionId: cn-shanghai
+  OSSRamAccessKeyID: LTAI4GJHf3UU4T9zAkxagkkm
+  OSSRamAccessKeySecret: yUrvYyoS1GunPwNFlpZRofA9YzeY2G
+  OSSRoleArn: "acs:ram::1527812904086864:role/root"
+  OSSRoleSessionName: milkandbreak

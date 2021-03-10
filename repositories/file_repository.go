@@ -8,8 +8,11 @@ import (
 
 type IFileRepository interface {
 	SelectByUserName(userName string) (files[] map[string]interface{}, err error)
+	SelectByFileUuid(fileUuid string) (file *datamodels.File, err error)
 	Insert(file *datamodels.File) (fileId uint, fileUuid string, err error)
 	UpdateFileName(fileName string, uuid string) (err error)
+	UpdateUsageCapacity(usageCapacity float64, uuid string) (err error)
+	UpdateCapacity(capacity float64, uuid string) (err error)
 	DeleteByUuid(fileUuid string)(err error)
 }
 
@@ -22,11 +25,20 @@ type FileManagerRepository struct {
 }
 
 func (f *FileManagerRepository) SelectByUserName(userName string) (files[] map[string]interface{}, err error) {
-	result := f.db.Model(&datamodels.File{}).Where("user_name = ?", userName).Find(&files)
+	result := f.db.Model(&datamodels.File{}).Where("user_name = ?", userName).First(&files)
 	if result.Error != nil{
 		return files, result.Error
 	}
 	return files, nil
+}
+
+func (f *FileManagerRepository) SelectByFileUuid(fileUuid string) (table *datamodels.File, err error) {
+	var file datamodels.File
+	result := f.db.Model(&datamodels.File{}).Where("uuid = ?", fileUuid).Find(&file)
+	if result.Error != nil{
+		return &file, result.Error
+	}
+	return &file, nil
 }
 
 func (f *FileManagerRepository) Insert(file *datamodels.File) (fileId uint, fileUuid string, err error) {
@@ -48,6 +60,26 @@ func (f *FileManagerRepository) UpdateFileName(fileName string, uuid string) (er
 
 func (f *FileManagerRepository) DeleteByUuid(fileUuid string) (err error) {
 	result := f.db.Where("uuid = ?", fileUuid).Delete(&datamodels.File{})
+	if result.Error != nil{
+		return result.Error
+	}
+	return nil
+}
+
+func (f *FileManagerRepository) UpdateUsageCapacity(usageCapacity float64, uuid string) (err error) {
+	result := f.db.Model(
+		&datamodels.File{}).Where("uuid = ?", uuid).Update(
+			"usage_capacity", usageCapacity)
+	if result.Error != nil{
+		return result.Error
+	}
+	return nil
+}
+
+func (f *FileManagerRepository) UpdateCapacity(capacity float64, uuid string) (err error) {
+	result := f.db.Model(
+		&datamodels.File{}).Where("uuid = ?", uuid).Update(
+		"capacity", capacity)
 	if result.Error != nil{
 		return result.Error
 	}

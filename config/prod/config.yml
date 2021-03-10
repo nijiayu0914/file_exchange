@@ -5,6 +5,7 @@ DisableBodyConsumptionOnUnmarshal: true
 TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
 Charset: UTF-8
 Other:
+  UserCapacity: 5120.0
   DatabaseType: mysql
   DatabaseDsn: "root:123456@tcp(localhost:3306)/public?charset=utf8mb4&parseTime=True&loc=Local"
   RedisDsn: "localhost:6379"

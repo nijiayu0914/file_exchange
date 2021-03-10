@@ -61,8 +61,8 @@ func main()  {
 		panic("failed to connect oss")
 	}
 
-	routes.Routes(app, db, redisClient, &ossOperator)
-	//3.启动服务
+	routes.Routes(app, db, redisClient, &ossOperator, otherConfig)
+
 	app.Run(
 		iris.Addr("0.0.0.0:8080"),
 		iris.WithConfiguration(configuration))

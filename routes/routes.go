@@ -22,7 +22,8 @@ func RegisterFileCollercors(db *gorm.DB) services.IFileService{
 }
 
 func Routes(app *iris.Application, db *gorm.DB,
-	redisClient *redis.Client, ossOperator *services.OssOperator){
+	redisClient *redis.Client, ossOperator *services.OssOperator,
+	otherConfig map[string]interface{}){
 	userService := RegisterUserCollercors(db)
 	fileService := RegisterFileCollercors(db)
 
@@ -57,8 +58,8 @@ func Routes(app *iris.Application, db *gorm.DB,
 	})
 
 	files := app.Party("/file", func(ctx iris.Context){
-		fileController := controllers.FileController{FileService: fileService}
-		fileController.CheckToken(ctx, redisClient)
+		userController := controllers.UserController{UserService: userService}
+		userController.CheckToken(ctx, redisClient)
 	})
 	files.Get("/change_library_name", func(ctx iris.Context){
 		fileController := controllers.FileController{FileService: fileService}
@@ -95,6 +96,17 @@ func Routes(app *iris.Application, db *gorm.DB,
 	files.Get("/grant", func(ctx iris.Context){
 		controllers.CreateSTS(ctx, ossOperator)
 	})
+	files.Get("/read_allfiles_size", func(ctx iris.Context){
+		controllers.ReadAllFilesCapacity(ctx, ossOperator)
+	})
+	files.Put("/update_usage", func(ctx iris.Context){
+		fileController := controllers.FileController{FileService: fileService}
+		fileController.UpdateUsage(ctx)
+	})
+	files.Put("/update_capacity", func(ctx iris.Context){
+		fileController := controllers.FileController{FileService: fileService}
+		fileController.UpdateCapacity(ctx)
+	})
 	files.Put("/restore_file", func(ctx iris.Context){
 		controllers.RestoreFile(ctx, ossOperator)
 	})
@@ -106,7 +118,7 @@ func Routes(app *iris.Application, db *gorm.DB,
 	})
 	files.Post("/create_library", func(ctx iris.Context){
 		fileController := controllers.FileController{FileService: fileService}
-		fileController.CreateFile(ctx)
+		fileController.CreateFile(ctx, otherConfig["UserCapacity"].(float64))
 	})
 	files.Post("/list_files", func(ctx iris.Context){
 		controllers.ListFiles(ctx, ossOperator)
@@ -117,6 +129,9 @@ func Routes(app *iris.Application, db *gorm.DB,
 	files.Post("/delete_files_forever", func(ctx iris.Context){
 		controllers.DeleteFilesForever(ctx, ossOperator)
 	})
+	files.Post("/delete_history_file", func(ctx iris.Context){
+		controllers.DeleteHistoryFile(ctx, ossOperator)
+	})
 	files.Post("/delete_child_file", func(ctx iris.Context){
 		controllers.DeleteChildFile(ctx, ossOperator)
 	})
@@ -125,5 +140,8 @@ func Routes(app *iris.Application, db *gorm.DB,
 	})
 	files.Post("/copy_multi_files", func(ctx iris.Context){
 		controllers.MultipleCopy(ctx, ossOperator)
+	})
+	files.Post("/read_files_size", func(ctx iris.Context){
+		controllers.ReadFilesSize(ctx, ossOperator)
 	})
 }

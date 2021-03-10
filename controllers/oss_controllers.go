@@ -196,6 +196,21 @@ func DeleteFilesForever (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+func DeleteHistoryFile (ctx iris.Context, ossOperator *services.OssOperator){
+	rdhf := utils.RequestDeleteHistoryFile{}
+	ctx.ReadJSON(&rdhf)
+	err := ossOperator.DeleteHistoryFile(rdhf.FileUuid, rdhf.Path, rdhf.VersionId)
+	if err != nil{
+		res := utils.Response{Code: iris.StatusBadRequest, Message: "删除失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	} else{
+		res := utils.Response{Code: iris.StatusOK, Message: "删除成功"}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
 func DeleteLibraryForever (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	objectsContainer, _, err := ossOperator.ListFiles(fileUuid, "", "")
@@ -264,6 +279,37 @@ func MultipleCopy (ctx iris.Context, ossOperator *services.OssOperator) {
 		ctx.JSON(res)
 	} else{
 		res := utils.Response{Code: iris.StatusOK, Message: "复制成功"}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
+func ReadFilesSize (ctx iris.Context, ossOperator *services.OssOperator){
+	rqrfs := utils.RequestReadFilesSize{}
+	ctx.ReadJSON(&rqrfs)
+	size, err := ossOperator.ReadFilesCapacity(rqrfs.Files)
+	if err != nil{
+		res := utils.Response{Code: iris.StatusBadRequest, Message: "查询失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK, Message: "查询成功",
+			Data: iris.Map{"size": size}}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
+func ReadAllFilesCapacity (ctx iris.Context, ossOperator *services.OssOperator){
+	fileUuid := ctx.URLParam("uuid")
+	size, err := ossOperator.ReadAllFilesCapacity(fileUuid)
+	if err != nil{
+		res := utils.Response{Code: iris.StatusBadRequest, Message: "查询失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK, Message: "查询成功",
+			Data: iris.Map{"size": size}}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}

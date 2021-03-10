@@ -4,7 +4,6 @@ import (
 	"file_exchange/datamodels"
 	"file_exchange/services"
 	"file_exchange/utils"
-	"github.com/go-redis/redis"
 	"github.com/kataras/iris/v12"
 )
 
@@ -12,31 +11,11 @@ type FileController struct {
 	FileService services.IFileService
 }
 
-func (fc *FileController) CheckToken(ctx iris.Context, redisClient *redis.Client){
-	token := ctx.GetHeader("Authorization")
-	userName := ctx.GetHeader("User-Name")
-	tokenCache, err := redisClient.Get(userName).Result()
-	if err != nil{
-		res := utils.Response{Code: iris.StatusForbidden, Message: "token验证失败"}
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.JSON(res)
-		return
-	}
-
-	checked, _ := utils.Verification(userName, tokenCache)
-	if !checked || token != tokenCache{
-		res := utils.Response{Code: iris.StatusForbidden, Message: "token验证失败"}
-		ctx.StatusCode(iris.StatusForbidden)
-		ctx.JSON(res)
-		return
-	}
-	ctx.Next()
-}
-
-func (fc *FileController) CreateFile (ctx iris.Context){
+func (fc *FileController) CreateFile (ctx iris.Context, capacity float64){
 	file:= datamodels.File{}
 	ctx.ReadJSON(&file)
 	file.UserName = ctx.GetHeader("User-Name")
+	file.Capacity = capacity
 	fileId, fileUuid, err := fc.FileService.CreateFile(&file)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest, Message: "创建失败", Data: err.Error()}
@@ -92,6 +71,38 @@ func (fc *FileController) DeleteByUuid (ctx iris.Context){
 		ctx.JSON(res)
 	}else{
 		res := utils.Response{Code: iris.StatusOK, Message: "删除成功"}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
+func (fc *FileController) UpdateUsage (ctx iris.Context){
+	rquu := utils.RequestUpdateUsage{}
+	ctx.ReadJSON(&rquu)
+	err := fc.FileService.UpdateUsageCapacity(rquu.UsageCapacity, rquu.FileUuid, rquu.How)
+	if err != nil{
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "更新失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK, Message: "更新成功"}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
+func (fc *FileController) UpdateCapacity (ctx iris.Context){
+	rqcap := utils.RequestCapacity{}
+	ctx.ReadJSON(&rqcap)
+	err := fc.FileService.UpdateCapacity(rqcap.Capacity, rqcap.FileUuid)
+	if err != nil{
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "更新失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK, Message: "更新成功"}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}

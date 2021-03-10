@@ -255,7 +255,22 @@ func(os *OssOperator) ListDeleteMarkers (fileUuid string, path string, delimiter
 	return markers, nil
 }
 
-func(os *OssOperator) DeleteFileForever(fileUuid string, fileName string) (err error){
+func (os *OssOperator) DeleteHistoryFile(fileUuid string,
+	path string, versionId string) (err error){
+	key := utils.StringJoin("/", fileUuid, path)
+	var delObjects []oss.DeleteObject
+	delObjects = append(
+		delObjects,
+		oss.DeleteObject{Key: key, VersionId: versionId})
+	_, err =os.Bucket.DeleteObjectVersions(delObjects)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func(os *OssOperator) DeleteFileForever(
+	fileUuid string, fileName string) (err error){
 	markers, err := os.ListDeleteMarkers(fileUuid, fileName, "/")
 	if err != nil{
 		return err
@@ -370,4 +385,60 @@ func(os *OssOperator) RestoreFile(fileUuid string, path string) (err error){
 		return err
 	}
 	return nil
+}
+
+func(os *OssOperator) ReadFileCapacity(fileName string,
+	versionId string) (size float64, err error){
+	delimiter := oss.Delimiter("/")
+	keyMarker := oss.KeyMarker("")
+	versionIdMarker := oss.VersionIdMarker("")
+	prefix := oss.Prefix(fileName)
+	for {
+		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker, delimiter, versionIdMarker)
+		if err != nil {
+			return 0, err
+		}
+		for _, obj  := range lor.ObjectVersions {
+			if obj.VersionId == versionId{
+				return float64(obj.Size) / 1024 / 1024, nil
+			}
+		}
+		if lor.IsTruncated {
+			keyMarker = oss.KeyMarker(lor.NextKeyMarker)
+			versionIdMarker = oss.VersionIdMarker(lor.NextVersionIdMarker)
+		}else{
+			break
+		}
+	}
+	return 0, errors.New("未找到文件")
+}
+
+func(os *OssOperator) ReadFilesCapacity(files []utils.RequestReadFileSize) (size float64, err error){
+	for _, obj := range files{
+		objSize, err := os.ReadFileCapacity(obj.FileName, obj.VersionId)
+		if err != nil{
+			return size, err
+		}
+		size += objSize
+	}
+	return size, nil
+}
+
+func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (size float64, err error){
+	objects, _, _ := os.ListFiles(fileUuid, "", "")
+	for _, obj := range objects{
+		fileName := strings.Replace(obj.Basic.Key, fileUuid + "/", "", -1)
+		objectsVs, err := os.ListFileVersion(fileUuid, fileName)
+		if err != nil{
+			return 0, err
+		}
+		for _, ovs := range objectsVs{
+			objSize, err := os.ReadFileCapacity(obj.Basic.Key, ovs["versionId"].(string))
+			if err != nil{
+				return 0, err
+			}
+			size += objSize
+		}
+	}
+	return size, nil
 }

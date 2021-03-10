@@ -1,3 +1,5 @@
 mysql
 redis
 .idea
+
+.DS_Store

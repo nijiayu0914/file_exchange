@@ -14,6 +14,27 @@ type UserController struct {
 	UserService services.IUserService
 }
 
+func (uc *UserController) CheckToken(ctx iris.Context, redisClient *redis.Client){
+	token := ctx.GetHeader("Authorization")
+	userName := ctx.GetHeader("User-Name")
+	tokenCache, err := redisClient.Get(userName).Result()
+	if err != nil{
+		res := utils.Response{Code: iris.StatusForbidden, Message: "token验证失败"}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+		return
+	}
+
+	checked, _ := utils.Verification(userName, tokenCache)
+	if !checked || token != tokenCache{
+		res := utils.Response{Code: iris.StatusForbidden, Message: "token验证失败"}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+		return
+	}
+	ctx.Next()
+}
+
 func (uc *UserController) CreateUser(ctx iris.Context, redisClient *redis.Client){
 	user := datamodels.User{}
 	ctx.ReadJSON(&user)

@@ -1,3 +1,4 @@
+config/dev/config.yml
 mysql
 redis
 .idea

@@ -1,0 +1,26 @@
+DisablePathCorrection: false
+EnablePathEscape: false
+FireMethodNotAllowed: true
+DisableBodyConsumptionOnUnmarshal: true
+TimeFormat: Mon, 01 Jan 2006 15:04:05 GMT
+Charset: UTF-8
+Other:
+  Port: 8080
+  Admin: admin
+  AdminPassword: DTJ2dSwcGevGHM93xAMz55EGOxVhqZNDWVkI
+  UserCapacity: 5120.0
+  DatabaseType: mysql
+  DatabaseDsn: "root:123456@tcp(localhost:3306)/public?charset=utf8mb4&parseTime=True&loc=Local"
+  RedisDsn: "localhost:6379"
+  RedisPassword: "123456"
+  RedisDb: 0
+  OSSBucket: file-exchange-algo
+  OSSEndpoint: oss-cn-shanghai.aliyuncs.com
+  OSSAccessKeyID: LTAI4*********dw7mp3A
+  OSSAccessKeySecret: pOqFJ3oZO************zln4MNrBH
+  OSSBucketName: file-exchange-algo
+  OSSRegionId: cn-shanghai
+  OSSRamAccessKeyID: LTAI4********Akxagkkm
+  OSSRamAccessKeySecret: yUrvYyoS*********fA9YzeY2G
+  OSSRoleArn: "acs:ram::1527******086864:role/rule"
+  OSSRoleSessionName: anystring

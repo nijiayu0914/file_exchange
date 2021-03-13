@@ -16,4 +16,4 @@ RUN go build -ldflags="-s -w" -o compile
 FROM scratch as prod
 COPY --from=build /go/release/compile /
 EXPOSE 8080
-CMD ["/compile -config_type=http -config_path=http://0.0.0.0:7000/file_exchange/prod/config.yml"]
+ENTRYPOINT ["/compile", "-config_type=http", "-config_path=http://192.168.0.130:7000/file_exchange/prod/config.yml"]

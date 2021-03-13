@@ -27,7 +27,7 @@ func FileExist(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-// Str2md5 字符串进行md5加密
+// Str2md5 字符串进行md5转换
 func Str2md5(str string) (md5Str string){
 	data:=[]byte(str)
 	h := md5.New()

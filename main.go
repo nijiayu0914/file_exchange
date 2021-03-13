@@ -1,4 +1,5 @@
 // main 项目入口文件，配置加载，数据库初始化等
+// 项目基于阿里云OSS封装的文件交换的网盘
 package main
 
 import (
@@ -18,21 +19,21 @@ import (
 
 // 项目入口
 func main()  {
-	// 配置文件存储类型，本地文件存储 or URL GET请求，默认文件存储
+	// configType 配置文件的来源类型，本地文件存储 or URL GET请求，默认本地文件存储
 	configType := flag.String(
-		"config_type",
-		"file",
-		"配置文件获取类型，file为本地文件，http问网络路径")
+		"config_type", // 类型
+		"file", // file or http
+		"配置文件获取类型，file为本地文件，http访问网络路径")
 
 	// 配置文件存储地址，默认./config/dev/config.yml
 	configPath := flag.String(
 		"config_path",
-		"./config/dev/config.yml",
+		"./config/dev/config.yml", // it can be path or url
 		"配置文件地址")
 	flag.Parse()
 
 	app := iris.New()
-	var configuration iris.Configuration
+	var configuration iris.Configuration // iris配置对象
 	if *configType == "file"{
 		log.Println(*configType)
 		log.Println(*configPath)
@@ -63,21 +64,21 @@ func main()  {
 	}
 
 	otherConfig := configuration.GetOther()
-	port := otherConfig["Port"]
-	dbType := otherConfig["DatabaseType"]
-	dbDsn := otherConfig["DatabaseDsn"]
-	redisDsn := otherConfig["RedisDsn"]
-	redisDb := otherConfig["RedisDb"]
-	redisPassword := otherConfig["RedisPassword"]
-	oSSEndpoint := otherConfig["OSSEndpoint"]
-	oSSAccessKeyID := otherConfig["OSSAccessKeyID"]
-	oSSAccessKeySecret := otherConfig["OSSAccessKeySecret"]
-	oSSBucketName := otherConfig["OSSBucketName"]
-	oSSRegionId := otherConfig["OSSRegionId"]
-	oSSRamAccessKeyID := otherConfig["OSSRamAccessKeyID"]
-	oSSRamAccessKeySecret := otherConfig["OSSRamAccessKeySecret"]
-	oSSRoleArn := otherConfig["OSSRoleArn"]
-	oSSRoleSessionName := otherConfig["OSSRoleSessionName"]
+	port := otherConfig["Port"] // 服务端口
+	dbType := otherConfig["DatabaseType"] // 数据库类型
+	dbDsn := otherConfig["DatabaseDsn"] // 数据库dsn
+	redisDsn := otherConfig["RedisDsn"] // redis dsn
+	redisDb := otherConfig["RedisDb"] // 访问redis数据库编号
+	redisPassword := otherConfig["RedisPassword"] // redis密码
+	oSSEndpoint := otherConfig["OSSEndpoint"] // OSS Endpoint
+	oSSAccessKeyID := otherConfig["OSSAccessKeyID"] // OSS AccessKeyID
+	oSSAccessKeySecret := otherConfig["OSSAccessKeySecret"] // OSS AccessKeySecret
+	oSSBucketName := otherConfig["OSSBucketName"] // OSS BucketName
+	oSSRegionId := otherConfig["OSSRegionId"] // OSS RegionId
+	oSSRamAccessKeyID := otherConfig["OSSRamAccessKeyID"] // OSS RamAccessKeyID
+	oSSRamAccessKeySecret := otherConfig["OSSRamAccessKeySecret"] // OSS RamAccessKeySecret
+	oSSRoleArn := otherConfig["OSSRoleArn"] // OSS Role Arn
+	oSSRoleSessionName := otherConfig["OSSRoleSessionName"] // OSS RoleSessionName
 
 	// 初始化数据库
 	db, err := utils.Db(dbType, dbDsn)

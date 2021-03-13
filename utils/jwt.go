@@ -15,7 +15,8 @@ var (
 // param userName: 用户名
 // param password: 密码
 // return token
-func GenerateToken(userName string, password string) (token string, err error){
+func GenerateToken(userName string, password string) (
+	token string, err error){
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_name":  userName,
 		"password": password,
@@ -32,7 +33,8 @@ func GenerateToken(userName string, password string) (token string, err error){
 // param token: token
 // return token用户名和存在时间
 func ParseToken(token string) (iris.Map, error) {
-	claim, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	claim, err := jwt.Parse(token,
+		func(token *jwt.Token) (interface{}, error) {
 		return sigKey, nil
 	})
 	if err != nil {

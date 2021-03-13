@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// IFileService file服务接口
 type IFileService interface {
 	FindFilesByUserName(userName string) (files[] map[string]interface{}, err error)
 	FindFileByUuid(fileUuid string) (file *datamodels.File, err error)
@@ -19,14 +20,17 @@ type IFileService interface {
 		capacity float64, free float64, err error)
 }
 
+// NewFileService 初始化file服务操作对象
 func NewFileService(repository repositories.IFileRepository) IFileService {
 	return &FileService{repository}
 }
 
+// FileService file服务操作对象
 type FileService struct {
 	FileRepository repositories.IFileRepository
 }
 
+// CreateFile 创建文件夹
 func (f *FileService) CreateFile(file *datamodels.File) (fileId uint,
 	fileUuid string, err error) {
 	uuidObj, err := uuid.NewRandom()
@@ -37,24 +41,29 @@ func (f *FileService) CreateFile(file *datamodels.File) (fileId uint,
 	return f.FileRepository.Insert(file)
 }
 
+// FindFilesByUserName 根据用户名查询文件
 func (f *FileService) FindFilesByUserName(userName string) (
 	files[] map[string]interface{}, err error) {
 	return f.FileRepository.SelectByUserName(userName)
 }
 
+// FindFileByUuid 根据uuid查询文件
 func (f *FileService) FindFileByUuid(fileUuid string) (
 	file *datamodels.File, err error) {
 	return f.FileRepository.SelectByFileUuid(fileUuid)
 }
 
+// UpdateFileName 修改文件夹名称
 func (f *FileService) UpdateFileName(fileName string, uuid string) (err error) {
 	return f.FileRepository.UpdateFileName(fileName, uuid)
 }
 
+// DeleteByUuid 根据uuid删除文件夹
 func (f *FileService) DeleteByUuid(fileUuid string) (err error) {
 	return f.FileRepository.DeleteByUuid(fileUuid)
 }
 
+// UpdateUsageCapacity 更新使用用量
 func (f *FileService) UpdateUsageCapacity(usageCapacity float64,
 	uuid string, how string) (err error) {
 	file, err := f.FindFileByUuid(uuid)
@@ -73,11 +82,13 @@ func (f *FileService) UpdateUsageCapacity(usageCapacity float64,
 	return f.FileRepository.UpdateUsageCapacity(usageCapacity, uuid)
 }
 
+// UpdateCapacity 更新允许容量
 func (f *FileService) UpdateCapacity(capacity float64,
 	uuid string) (err error) {
 	return f.FileRepository.UpdateCapacity(capacity, uuid)
 }
 
+// CheckCapacity 检查用量
 func (f *FileService) CheckCapacity(uuid string) (usageCapacity float64,
 	capacity float64, free float64, err error) {
 	file, err := f.FindFileByUuid(uuid)

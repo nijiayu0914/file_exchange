@@ -8,39 +8,46 @@ import (
 	"strings"
 )
 
+// CreateTestFile 创建测试文件
 func CreateTestFile(ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
 	content := ctx.URLParam("content")
-	err := ossOperator.CreateStringFile(fileUuid, fileName, content, "file")
+	err := ossOperator.CreateStringFile(fileUuid, fileName,
+		content, "file")
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "创建失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
-		res := utils.Response{Code: iris.StatusOK, Message: "ok", Data: "创建成功"}
+		res := utils.Response{Code: iris.StatusOK, Message: "ok",
+			Data: "创建成功"}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}
 }
 
+// CreateFolder 创建文件夹
 func CreateFolder (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name") + "/"
-	err := ossOperator.CreateStringFile(fileUuid, fileName, "", "folder")
+	err := ossOperator.CreateStringFile(fileUuid, fileName,
+		"", "folder")
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "创建失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
-		res := utils.Response{Code: iris.StatusOK, Message: "ok", Data: "创建成功"}
+		res := utils.Response{Code: iris.StatusOK,
+			Message: "ok", Data: "创建成功"}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}
 }
 
+// ListFiles 列举文件
 func ListFiles (ctx iris.Context, ossOperator *services.OssOperator) {
 	rqlf := utils.RequestListFiles{}
 	ctx.ReadJSON(&rqlf)
@@ -65,6 +72,7 @@ func ListFiles (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// IsFileExist 检查文件是否存在
 func IsFileExist (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
@@ -75,15 +83,24 @@ func IsFileExist (ctx iris.Context, ossOperator *services.OssOperator) {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
-		res := utils.Response{Code: iris.StatusOK, Message: "判断成功", Data: isExist}
+		res := utils.Response{Code: iris.StatusOK,
+			Message: "判断成功", Data: isExist}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}
 }
 
+// RenameObject 重命名对象
 func RenameObject (ctx iris.Context, ossOperator *services.OssOperator) {
 	rqrename := utils.RequestRenameObject{}
 	ctx.ReadJSON(&rqrename)
+	if len(rqrename.FileUuid) == 0 {
+		res := utils.Response{Code: iris.StatusForbidden,
+			Message: "uuid不能为空"}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+		return
+	}
 	err := ossOperator.RenameObject(rqrename.ObjectName, rqrename.NewName)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
@@ -97,6 +114,7 @@ func RenameObject (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// DeleteFile 删除文件
 func DeleteFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
@@ -113,6 +131,7 @@ func DeleteFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// DeleteChildFile 删除文件夹下文件夹
 func DeleteChildFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	rqlf := utils.RequestListFiles{}
 	ctx.ReadJSON(&rqlf)
@@ -129,10 +148,12 @@ func DeleteChildFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// DeleteFiles 多个文件打上删除标记
 func DeleteFiles (ctx iris.Context, ossOperator *services.OssOperator) {
 	rqdfs := utils.RequestDeleteFiles{}
 	ctx.ReadJSON(&rqdfs)
-	deleteMarket, err := ossOperator.DeleteFiles(rqdfs.FileUuid, rqdfs.FileNames)
+	deleteMarket, err := ossOperator.DeleteFiles(rqdfs.FileUuid,
+		rqdfs.FileNames)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "删除失败", Data: err.Error()}
@@ -146,6 +167,7 @@ func DeleteFiles (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// ListDeleteMarkers 列举删除标记
 func ListDeleteMarkers (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	delimiter := ctx.URLParam("delimiter")
@@ -163,6 +185,7 @@ func ListDeleteMarkers (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// ListFileVersion 列举文件版本
 func ListFileVersion (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	path := ctx.URLParam("path")
@@ -180,6 +203,7 @@ func ListFileVersion (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// DeleteFileForever 永久删除文件
 func DeleteFileForever (ctx iris.Context, ossOperator *services.OssOperator,
 	fileService services.IFileService) {
 	fileUuid := ctx.URLParam("uuid")
@@ -203,13 +227,15 @@ func DeleteFileForever (ctx iris.Context, ossOperator *services.OssOperator,
 	}
 }
 
+// DeleteFilesForever 永久删除多个文件
 func DeleteFilesForever (ctx iris.Context, ossOperator *services.OssOperator,
 	fileService services.IFileService) {
 	rqdfs := utils.RequestDeleteFiles{}
 	ctx.ReadJSON(&rqdfs)
 	size, err := ossOperator.DeleteFilesForever(rqdfs.FileUuid, rqdfs.FileNames)
 	go func() {
-		err := fileService.UpdateUsageCapacity(size, rqdfs.FileUuid, "increase")
+		err := fileService.UpdateUsageCapacity(size,
+			rqdfs.FileUuid, "increase")
 		if err != nil{
 			log.Println("更新容量失败")
 		}
@@ -226,10 +252,12 @@ func DeleteFilesForever (ctx iris.Context, ossOperator *services.OssOperator,
 	}
 }
 
+// DeleteHistoryFile 删除历史文件
 func DeleteHistoryFile (ctx iris.Context, ossOperator *services.OssOperator){
 	rdhf := utils.RequestDeleteHistoryFile{}
 	ctx.ReadJSON(&rdhf)
-	err := ossOperator.DeleteHistoryFile(rdhf.FileUuid, rdhf.Path, rdhf.VersionId)
+	err := ossOperator.DeleteHistoryFile(rdhf.FileUuid,
+		rdhf.Path, rdhf.VersionId)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "删除失败", Data: err.Error()}
@@ -242,9 +270,12 @@ func DeleteHistoryFile (ctx iris.Context, ossOperator *services.OssOperator){
 	}
 }
 
-func DeleteLibraryForever (ctx iris.Context, ossOperator *services.OssOperator) {
+// DeleteLibraryForever 删除整个用户文件
+func DeleteLibraryForever (ctx iris.Context,
+	ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
-	objectsContainer, _, err := ossOperator.ListFiles(fileUuid, "", "")
+	objectsContainer, _, err := ossOperator.ListFiles(
+		fileUuid, "", "")
 	if err != nil {
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "查询文件失败", Data: err.Error()}
@@ -272,6 +303,7 @@ func DeleteLibraryForever (ctx iris.Context, ossOperator *services.OssOperator) 
 	ctx.Next()
 }
 
+// RestoreFile 还原文件
 func RestoreFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	path := ctx.URLParam("path")
@@ -288,11 +320,20 @@ func RestoreFile (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// CopyFile 复制文件
 func CopyFile (ctx iris.Context, ossOperator *services.OssOperator,
 	fileService services.IFileService) {
 	rqcp := utils.RequestCopy{}
 	ctx.ReadJSON(&rqcp)
-	size, err := ossOperator.Copy(rqcp.OriginFile, rqcp.DestFile, rqcp.VersionId)
+	if len(rqcp.FileUuid) == 0 {
+		res := utils.Response{Code: iris.StatusForbidden,
+			Message: "uuid不能为空"}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+		return
+	}
+	size, err := ossOperator.Copy(rqcp.OriginFile,
+		rqcp.DestFile, rqcp.VersionId)
 	go func() {
 		err := fileService.UpdateUsageCapacity(
 			size, strings.Split(rqcp.OriginFile, "/")[0], "decrease")
@@ -312,10 +353,18 @@ func CopyFile (ctx iris.Context, ossOperator *services.OssOperator,
 	}
 }
 
+// MultipleCopy 复制多个文件
 func MultipleCopy (ctx iris.Context, ossOperator *services.OssOperator,
 	fileService services.IFileService) {
 	rqmc := utils.RequestMultipleCopy{}
 	ctx.ReadJSON(&rqmc)
+	if len(rqmc.FileUuid) == 0 {
+		res := utils.Response{Code: iris.StatusForbidden,
+			Message: "uuid不能为空"}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+		return
+	}
 	failure, size, err := ossOperator.MultipleCopy(rqmc.CopyList)
 	go func() {
 		err := fileService.UpdateUsageCapacity(size, strings.Split(
@@ -336,6 +385,7 @@ func MultipleCopy (ctx iris.Context, ossOperator *services.OssOperator,
 	}
 }
 
+// ReadFilesSize 读取文件容量
 func ReadFilesSize (ctx iris.Context, ossOperator *services.OssOperator){
 	rqrfs := utils.RequestReadFilesSize{}
 	ctx.ReadJSON(&rqrfs)
@@ -353,7 +403,9 @@ func ReadFilesSize (ctx iris.Context, ossOperator *services.OssOperator){
 	}
 }
 
-func ReadAllFilesCapacity (ctx iris.Context, ossOperator *services.OssOperator){
+// ReadAllFilesCapacity 读取所有文件容量
+func ReadAllFilesCapacity (ctx iris.Context,
+	ossOperator *services.OssOperator){
 	fileUuid := ctx.URLParam("uuid")
 	size, err := ossOperator.ReadAllFilesCapacity(fileUuid)
 	if err != nil{
@@ -369,6 +421,7 @@ func ReadAllFilesCapacity (ctx iris.Context, ossOperator *services.OssOperator){
 	}
 }
 
+// CreateSTS 创建临时授权
 func CreateSTS (ctx iris.Context, ossOperator *services.OssOperator) {
 	response, err := ossOperator.CreateSTS ()
 	if err != nil{
@@ -384,6 +437,7 @@ func CreateSTS (ctx iris.Context, ossOperator *services.OssOperator) {
 	}
 }
 
+// DownloadUrl 获取临时文件下载地址
 func DownloadUrl (ctx iris.Context, ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
@@ -394,7 +448,8 @@ func DownloadUrl (ctx iris.Context, ossOperator *services.OssOperator) {
 		ctx.StatusCode(iris.StatusForbidden)
 		ctx.JSON(res)
 	}else{
-		res := utils.Response{Code: iris.StatusOK, Message: "授权成功", Data: url}
+		res := utils.Response{Code: iris.StatusOK,
+			Message: "授权成功", Data: url}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}

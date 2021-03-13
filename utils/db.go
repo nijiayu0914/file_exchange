@@ -32,11 +32,12 @@ func Db(dbType interface{}, dbDsn interface{})(db *gorm.DB, err error){
 // param redisDsn 地址
 // param redisPassword 数据库密码
 // param redisDb 数据库 0, 1, 2......
-func RedisCache(redisDsn string, redisPassword string, redisDb int) *redis.Client{
+func RedisCache(redisDsn string, redisPassword string,
+	redisDb int) *redis.Client{
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     redisDsn, // use default Addr
-		Password: redisPassword,               // no password set
-		DB:       redisDb,                // use default DB
+		Addr:     redisDsn,
+		Password: redisPassword,
+		DB:       redisDb,
 	})
 	return redisClient
 }

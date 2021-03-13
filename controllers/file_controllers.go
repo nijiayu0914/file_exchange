@@ -7,11 +7,14 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
+// FileController 文件操作控制器
 type FileController struct {
-	FileService services.IFileService
+	FileService services.IFileService // file服务接口
 }
 
-func (fc *FileController) CheckUuid(ctx iris.Context, fileService services.IFileService){
+// CheckUuid 检查uuid，用户与用户之间进行隔离，防止非法访问
+func (fc *FileController) CheckUuid(ctx iris.Context,
+	fileService services.IFileService){
 	var rquuid = utils.RequestCheckUuid{}
 	userName := ctx.GetHeader("User-Name")
 	uuid := ctx.URLParam("uuid")
@@ -53,6 +56,7 @@ func (fc *FileController) CheckUuid(ctx iris.Context, fileService services.IFile
 	ctx.Next()
 }
 
+// CreateFile 创建文件夹
 func (fc *FileController) CreateFile (ctx iris.Context, capacity float64){
 	file:= datamodels.File{}
 	ctx.ReadJSON(&file)
@@ -60,7 +64,8 @@ func (fc *FileController) CreateFile (ctx iris.Context, capacity float64){
 	file.Capacity = capacity
 	fileId, fileUuid, err := fc.FileService.CreateFile(&file)
 	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest, Message: "创建失败", Data: err.Error()}
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "创建失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	}else{
@@ -72,11 +77,13 @@ func (fc *FileController) CreateFile (ctx iris.Context, capacity float64){
 	}
 }
 
+// FindFilesByUserName 根据用户名查找文件
 func (fc *FileController) FindFilesByUserName (ctx iris.Context){
 	userName := ctx.GetHeader("User-Name")
 	files, err := fc.FileService.FindFilesByUserName(userName)
 	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest, Message: "查询失败", Data: err.Error()}
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "查询失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
@@ -86,16 +93,19 @@ func (fc *FileController) FindFilesByUserName (ctx iris.Context){
 	}
 }
 
+// ChangeFileName 更改文件夹名称
 func (fc *FileController) ChangeFileName (ctx iris.Context){
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
 	err := fc.FileService.UpdateFileName(fileName, fileUuid)
 	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest, Message: "更改失败", Data: err.Error()}
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "更改失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	}else{
-		res := utils.Response{Code: iris.StatusOK, Message: "ok", Data: iris.Map{
+		res := utils.Response{Code: iris.StatusOK,
+			Message: "ok", Data: iris.Map{
 			"uuid": fileUuid,
 			"file_name": fileName,
 		}}
@@ -104,11 +114,13 @@ func (fc *FileController) ChangeFileName (ctx iris.Context){
 	}
 }
 
+// DeleteByUuid 根据uuid删除文件夹
 func (fc *FileController) DeleteByUuid (ctx iris.Context){
 	fileUuid := ctx.URLParam("uuid")
 	err := fc.FileService.DeleteByUuid(fileUuid)
 	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest, Message: "数据库删除失败", Data: err.Error()}
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "数据库删除失败", Data: err.Error()}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	}else{
@@ -118,10 +130,12 @@ func (fc *FileController) DeleteByUuid (ctx iris.Context){
 	}
 }
 
+// UpdateUsage 更新用量
 func (fc *FileController) UpdateUsage (ctx iris.Context){
 	rquu := utils.RequestUpdateUsage{}
 	ctx.ReadJSON(&rquu)
-	err := fc.FileService.UpdateUsageCapacity(rquu.UsageCapacity, rquu.FileUuid, rquu.How)
+	err := fc.FileService.UpdateUsageCapacity(rquu.UsageCapacity,
+		rquu.FileUuid, rquu.How)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "更新失败", Data: err.Error()}
@@ -134,6 +148,7 @@ func (fc *FileController) UpdateUsage (ctx iris.Context){
 	}
 }
 
+// UpdateCapacity 更新用量上限
 func (fc *FileController) UpdateCapacity (ctx iris.Context){
 	rqcap := utils.RequestCapacity{}
 	ctx.ReadJSON(&rqcap)
@@ -150,6 +165,7 @@ func (fc *FileController) UpdateCapacity (ctx iris.Context){
 	}
 }
 
+// CheckCapacity 检查用量
 func (fc *FileController) CheckCapacity (ctx iris.Context){
 	fileUuid := ctx.URLParam("uuid")
 	usageCapacity, capacity, free, err := fc.FileService.CheckCapacity(fileUuid)
@@ -159,7 +175,8 @@ func (fc *FileController) CheckCapacity (ctx iris.Context){
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	}else{
-		res := utils.Response{Code: iris.StatusOK, Message: "查询成功", Data: iris.Map{
+		res := utils.Response{Code: iris.StatusOK, Message: "查询成功",
+			Data: iris.Map{
 			"usageCapacity": usageCapacity,
 			"capacity": capacity,
 			"free": free,

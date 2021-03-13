@@ -11,20 +11,22 @@ import (
 	"strings"
 )
 
+// OSS操作对象
 type OssOperator struct {
-	Endpoint        		string
-	AccessKeyId     		string
-	AccessKeySecret 		string
-	OSSBucketName 			string
-	OSSRegionId 			string
-	OSSRamAccessKeyID 		string
-	OSSRamAccessKeySecret 	string
-	OSSRoleArn 				string
-	OSSRoleSessionName		string
-	Client          		*oss.Client
-	Bucket 					*oss.Bucket
+	Endpoint        		string // OSS Endpoint
+	AccessKeyId     		string // OSS AccessKeyID
+	AccessKeySecret 		string // OSS AccessKeySecret
+	OSSBucketName 			string // OSS BucketName
+	OSSRegionId 			string // OSS RegionId
+	OSSRamAccessKeyID 		string // OSS RamAccessKeyID
+	OSSRamAccessKeySecret 	string // OSS RamAccessKeySecret
+	OSSRoleArn 				string // OSS Role Arn
+	OSSRoleSessionName		string // OSS RoleSessionName
+	Client          		*oss.Client // OSS客户端对象
+	Bucket 					*oss.Bucket // OSS Bucket对象
 }
 
+// GetClient 获取OSS客户端操作对象
 func (os *OssOperator) GetClient () (err error){
 	os.Client, err = oss.New(os.Endpoint, os.AccessKeyId, os.AccessKeySecret)
 	if err != nil {
@@ -37,7 +39,9 @@ func (os *OssOperator) GetClient () (err error){
 	 return nil
 }
 
-func (os *OssOperator) CreateSTS () (response *sts.AssumeRoleResponse, err error){
+// CreateSTS 创建临时授权
+func (os *OssOperator) CreateSTS () (response *sts.AssumeRoleResponse,
+	err error){
 	client, err := sts.NewClientWithAccessKey(
 		os.OSSRegionId, os.OSSRamAccessKeyID, os.OSSRamAccessKeySecret)
 	if err != nil{
@@ -54,6 +58,7 @@ func (os *OssOperator) CreateSTS () (response *sts.AssumeRoleResponse, err error
 	return response, nil
 }
 
+// CreateStringFile 创建样例文件，用于测试
 func (os *OssOperator) CreateStringFile (fileUuid string,
 	childFileName string, content string, category string) (err error) {
 	options := []oss.Option{
@@ -74,15 +79,20 @@ func (os *OssOperator) CreateStringFile (fileUuid string,
 	return nil
 }
 
-func (os *OssOperator) GetObjectMetaData (fileName string, versionId string) (http.Header, error) {
-	props, err := os.Bucket.GetObjectDetailedMeta(fileName, oss.VersionId(versionId))
+// GetObjectMetaData 获取文件元信息
+func (os *OssOperator) GetObjectMetaData (fileName string,
+	versionId string) (http.Header, error) {
+	props, err := os.Bucket.GetObjectDetailedMeta(fileName,
+		oss.VersionId(versionId))
 	if err != nil {
 		return nil, err
 	}
 	return props, nil
 }
 
-func (os *OssOperator) RenameObject (objectName string, newName string) (err error){
+// RenameObject 重命名文件对象
+func (os *OssOperator) RenameObject (objectName string,
+	newName string) (err error){
 	props, err := os.Bucket.GetObjectDetailedMeta(objectName)
 	if err != nil{
 		return err
@@ -100,8 +110,10 @@ func (os *OssOperator) RenameObject (objectName string, newName string) (err err
 	return nil
 }
 
+// ListFiles 列举文件
 func (os *OssOperator) ListFiles (fileUuid string,
-	path string, delimiter string)  (objectsContainer []utils.ObjectInfoCollection,
+	path string, delimiter string) (
+	objectsContainer []utils.ObjectInfoCollection,
 	dirsContainer []utils.DirInfoCollection,
 	err error) {
 	continueToken := ""
@@ -147,6 +159,7 @@ func (os *OssOperator) ListFiles (fileUuid string,
 	return objectsContainer, dirsContainer, err
 }
 
+// IsExist 检查文件是否存在
 func (os *OssOperator) IsExist (fileUuid string,
 	fileName string) (isExist bool, err error){
 	isExist, err = os.Bucket.IsObjectExist(
@@ -157,6 +170,7 @@ func (os *OssOperator) IsExist (fileUuid string,
 	return isExist, nil
 }
 
+// DeleteFile 为文件打上删除标记
 func (os *OssOperator) DeleteFile (fileUuid string,
 	fileName string) (err error) {
 	err = os.Bucket.DeleteObject(utils.StringJoin("/", fileUuid, fileName))
@@ -166,6 +180,7 @@ func (os *OssOperator) DeleteFile (fileUuid string,
 	return nil
 }
 
+// DeleteChildFile 为文件夹下所有文件打上删除标记
 func (os *OssOperator) DeleteChildFile (fileUuid string,
 	path string) (err error){
 	objectsContainer, _, err := os.ListFiles(fileUuid, path, "")
@@ -178,12 +193,14 @@ func (os *OssOperator) DeleteChildFile (fileUuid string,
 	return nil
 }
 
+// DeleteFiles 删除对个文件
 func (os *OssOperator) DeleteFiles (fileUuid string,
 	fileNames []string) (deleteMarket []oss.DeletedKeyInfo, err error) {
 	var delObjects []oss.DeleteObject
 	for _, fileName := range fileNames{
 		delObjects = append(delObjects,
-			oss.DeleteObject{Key: utils.StringJoin("/", fileUuid, fileName)})
+			oss.DeleteObject{
+			Key: utils.StringJoin("/", fileUuid, fileName)})
 	}
 	res, err := os.Bucket.DeleteObjectVersions(delObjects)
 	if err != nil {
@@ -193,6 +210,7 @@ func (os *OssOperator) DeleteFiles (fileUuid string,
 	return deleteMarket, nil
 }
 
+// ListFileVersion 列举文件版本
 func(os *OssOperator) ListFileVersion (fileUuid string,
 	path string) (objects []map[string]interface{}, err error){
 	delimiter := oss.Delimiter("/")
@@ -200,7 +218,8 @@ func(os *OssOperator) ListFileVersion (fileUuid string,
 	versionIdMarker := oss.VersionIdMarker("")
 	prefix := oss.Prefix(utils.StringJoin("/", fileUuid, path))
 	for {
-		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker, delimiter, versionIdMarker)
+		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker,
+			delimiter, versionIdMarker)
 		if err != nil {
 			return nil, err
 		}
@@ -225,14 +244,17 @@ func(os *OssOperator) ListFileVersion (fileUuid string,
 	return objects, nil
 }
 
-func(os *OssOperator) ListDeleteMarkers (fileUuid string, path string, delimiter string) (
+// ListDeleteMarkers 列举删除标记
+func(os *OssOperator) ListDeleteMarkers (fileUuid string, path string,
+	delimiter string) (
 	markers []map[string]interface{}, err error) {
 	dmt := oss.Delimiter(delimiter)
 	keyMarker := oss.KeyMarker("")
 	versionIdMarker := oss.VersionIdMarker("")
 	prefix := oss.Prefix(utils.StringJoin("/", fileUuid, path))
 	for {
-		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker, dmt, versionIdMarker)
+		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker,
+			dmt, versionIdMarker)
 		if err != nil {
 			return nil, err
 		}
@@ -255,6 +277,7 @@ func(os *OssOperator) ListDeleteMarkers (fileUuid string, path string, delimiter
 	return markers, nil
 }
 
+// DeleteHistoryFile 删除文件历史存档
 func (os *OssOperator) DeleteHistoryFile(fileUuid string,
 	path string, versionId string) (err error){
 	key := utils.StringJoin("/", fileUuid, path)
@@ -269,6 +292,7 @@ func (os *OssOperator) DeleteHistoryFile(fileUuid string,
 	return nil
 }
 
+// DeleteFileForever 永久删除文件
 func(os *OssOperator) DeleteFileForever(
 	fileUuid string, fileName string) (size float64, err error){
 	markers, err := os.ListDeleteMarkers(fileUuid, fileName, "/")
@@ -302,6 +326,7 @@ func(os *OssOperator) DeleteFileForever(
 	return size, nil
 }
 
+// DeleteFilesForever 永久删除多个文件
 func(os *OssOperator) DeleteFilesForever(fileUuid string,
 	fileNames []string) (size float64, err error) {
 	for _, fileName := range fileNames{
@@ -314,13 +339,15 @@ func(os *OssOperator) DeleteFilesForever(fileUuid string,
 	return size, nil
 }
 
+// Copy 拷贝文件
 func(os *OssOperator) Copy(originFile string,
 	destFile string, versionId string) (addSize float64, err error) {
 	originFileInfo, err := os.GetObjectMetaData(originFile, versionId)
 	if err != nil{
 		return 0, err
 	}
-	size, err := strconv.ParseFloat(originFileInfo.Get("Content-Length"), 64)
+	size, err := strconv.ParseFloat(
+		originFileInfo.Get("Content-Length"), 64)
 	if err != nil{
 		return 0, err
 	}
@@ -334,6 +361,7 @@ func(os *OssOperator) Copy(originFile string,
 			return 0, err
 		}
 	}else{
+		// copy object by chunk
 		chunkSize := int(math.Floor(mbSize / 500))
 		chunks, err := oss.SplitFileByPartNum(originFile, chunkSize)
 		if err != nil{
@@ -360,6 +388,7 @@ func(os *OssOperator) Copy(originFile string,
 	return addSize, nil
 }
 
+// MultipleCopy 拷贝多个文件
 func(os *OssOperator) MultipleCopy(copyList []utils.RequestCopy)(
 	failure []utils.RequestCopy, size float64, err error) {
 	for _, cp := range copyList{
@@ -376,6 +405,7 @@ func(os *OssOperator) MultipleCopy(copyList []utils.RequestCopy)(
 	}
 }
 
+// RestoreFile 还原删除标记
 func(os *OssOperator) RestoreFile(fileUuid string, path string) (err error){
 	markers, err := os.ListDeleteMarkers(fileUuid, path, "/")
 	if err != nil{
@@ -395,6 +425,7 @@ func(os *OssOperator) RestoreFile(fileUuid string, path string) (err error){
 	return nil
 }
 
+// ReadFileCapacity 读取文件大小
 func(os *OssOperator) ReadFileCapacity(fileName string,
 	versionId string) (size float64, err error){
 	delimiter := oss.Delimiter("/")
@@ -402,7 +433,8 @@ func(os *OssOperator) ReadFileCapacity(fileName string,
 	versionIdMarker := oss.VersionIdMarker("")
 	prefix := oss.Prefix(fileName)
 	for {
-		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker, delimiter, versionIdMarker)
+		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker,
+			delimiter, versionIdMarker)
 		if err != nil {
 			return 0, err
 		}
@@ -421,6 +453,7 @@ func(os *OssOperator) ReadFileCapacity(fileName string,
 	return 0, errors.New("未找到文件")
 }
 
+// ReadFilesCapacity 读取多个文件大小
 func(os *OssOperator) ReadFilesCapacity(fileUuid string,
 	files []utils.RequestReadFileSize) (size float64, err error){
 	for _, obj := range files{
@@ -434,7 +467,9 @@ func(os *OssOperator) ReadFilesCapacity(fileUuid string,
 	return size, nil
 }
 
-func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (size float64, err error){
+// ReadAllFilesCapacity 读取所有文件大小
+func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (
+	size float64, err error){
 	objects, _, _ := os.ListFiles(fileUuid, "", "")
 	for _, obj := range objects{
 		fileName := strings.Replace(obj.Basic.Key, fileUuid + "/", "", -1)
@@ -443,7 +478,8 @@ func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (size float64, err e
 			return 0, err
 		}
 		for _, ovs := range objectsVs{
-			objSize, err := os.ReadFileCapacity(obj.Basic.Key, ovs["versionId"].(string))
+			objSize, err := os.ReadFileCapacity(
+				obj.Basic.Key, ovs["versionId"].(string))
 			if err != nil{
 				return 0, err
 			}
@@ -453,10 +489,12 @@ func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (size float64, err e
 	return size, nil
 }
 
+// DownloadFile 获取文件下载链接
 func(os *OssOperator) DownloadFile(fileUuid string,
 	fileName string) (url string, err error){
 	objectName := utils.StringJoin("/", fileUuid, fileName)
-	signedURL, err := os.Bucket.SignURL(objectName, oss.HTTPGet, 60)
+	signedURL, err := os.Bucket.SignURL(
+		objectName, oss.HTTPGet, 60)
 	if err != nil {
 		return "", err
 	}

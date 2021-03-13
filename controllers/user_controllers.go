@@ -62,7 +62,7 @@ func (uc *UserController) CreateUser(ctx iris.Context,
 			err := redisClient.Set(user.UserName, token, 48 * time.Hour).Err()
 			if err != nil{
 				res = utils.Response{Code: iris.StatusBadRequest,
-					Message: "缓存失败"}
+					Message: "缓存失败", Data: err.Error()}
 				ctx.StatusCode(iris.StatusBadRequest)
 			}else{
 				res = utils.Response{Code: iris.StatusOK,
@@ -99,7 +99,7 @@ func (uc *UserController) Login(ctx iris.Context, redisClient *redis.Client,
 				if err != nil{
 					ctx.StatusCode(iris.StatusBadRequest)
 					ctx.JSON(utils.Response{Code: iris.StatusBadRequest,
-						Message: "缓存失败"})
+						Message: "缓存失败", Data: err.Error()})
 					return
 				}else{
 					ctx.StatusCode(iris.StatusBadRequest)
@@ -136,7 +136,7 @@ func (uc *UserController) Login(ctx iris.Context, redisClient *redis.Client,
 						token, 48 * time.Hour).Err()
 					if err != nil{
 						res = utils.Response{Code: iris.StatusBadRequest,
-							Message: "缓存失败"}
+							Message: "缓存失败", Data: err.Error()}
 						ctx.StatusCode(iris.StatusBadRequest)
 					}else{
 						res = utils.Response{Code: iris.StatusOK,
@@ -162,7 +162,7 @@ func (uc *UserController) Login(ctx iris.Context, redisClient *redis.Client,
 							token, 48 * time.Hour).Err()
 						if err != nil{
 							res = utils.Response{Code: iris.StatusBadRequest,
-								Message: "缓存失败"}
+								Message: "缓存失败", Data: err.Error()}
 							ctx.StatusCode(iris.StatusBadRequest)
 						}else{
 							res = utils.Response{Code: iris.StatusOK,

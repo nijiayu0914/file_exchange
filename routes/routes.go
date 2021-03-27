@@ -198,6 +198,7 @@ func Routes(
 	// 返回临时的文件下载url
 	// Params:
 	//	uuid: 文件夹uuid
+	//  file_name: 文件名称
 	files.Get("/download", func(ctx iris.Context){
 		controllers.DownloadUrl(ctx, ossOperator)
 	})

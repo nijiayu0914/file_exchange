@@ -366,19 +366,19 @@ func MultipleCopy (ctx iris.Context, ossOperator *services.OssOperator,
 		return
 	}
 	failure, size, err := ossOperator.MultipleCopy(rqmc.CopyList)
-	go func() {
-		err := fileService.UpdateUsageCapacity(size, strings.Split(
-			rqmc.CopyList[0].OriginFile, "/")[0], "decrease")
-		if err != nil{
-			log.Println("更新容量失败")
-		}
-	}()
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "复制失败", Data: failure}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
+		go func() {
+			err := fileService.UpdateUsageCapacity(size, strings.Split(
+				rqmc.CopyList[0].DestFile, "/")[0], "increase")
+			if err != nil{
+				log.Println("更新容量失败")
+			}
+		}()
 		res := utils.Response{Code: iris.StatusOK, Message: "复制成功"}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)

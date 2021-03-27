@@ -40,7 +40,7 @@ func (os *OssOperator) GetClient () (err error){
 }
 
 // CreateSTS 创建临时授权
-func (os *OssOperator) CreateSTS () (response *sts.AssumeRoleResponse,
+func (os *OssOperator) CreateSTS () (response interface{},
 	err error){
 	client, err := sts.NewClientWithAccessKey(
 		os.OSSRegionId, os.OSSRamAccessKeyID, os.OSSRamAccessKeySecret)
@@ -51,9 +51,19 @@ func (os *OssOperator) CreateSTS () (response *sts.AssumeRoleResponse,
 	request.Scheme = "https"
 	request.RoleArn = os.OSSRoleArn
 	request.RoleSessionName = os.OSSRoleSessionName
-	response, err = client.AssumeRole(request)
+	responseAll, err := client.AssumeRole(request)
 	if err != nil {
 		return response, err
+	}
+	if responseAll != nil{
+		response = map[string]interface{}{
+			"accessKeySecret": responseAll.Credentials.AccessKeySecret,
+			"accessKeyId": responseAll.Credentials.AccessKeyId,
+			"expiration": responseAll.Credentials.Expiration,
+			"stsToken": responseAll.Credentials.SecurityToken,
+			"region": "oss-" + os.OSSRegionId,
+			"bucket": os.OSSBucketName,
+		}
 	}
 	return response, nil
 }
@@ -393,9 +403,10 @@ func(os *OssOperator) MultipleCopy(copyList []utils.RequestCopy)(
 	failure []utils.RequestCopy, size float64, err error) {
 	for _, cp := range copyList{
 		addSize, err := os.Copy(cp.OriginFile, cp.DestFile, cp.VersionId)
-		size += addSize
 		if err != nil{
 			failure = append(failure, cp)
+		}else{
+			size += addSize
 		}
 	}
 	if len(failure) == 0{

@@ -102,7 +102,7 @@ func (uc *UserController) Login(ctx iris.Context, redisClient *redis.Client,
 						Message: "缓存失败", Data: err.Error()})
 					return
 				}else{
-					ctx.StatusCode(iris.StatusBadRequest)
+					ctx.StatusCode(iris.StatusOK)
 					ctx.JSON(utils.Response{Code: iris.StatusOK,
 						Message: "ok", Data: iris.Map{"token": token}})
 					return
@@ -141,8 +141,8 @@ func (uc *UserController) Login(ctx iris.Context, redisClient *redis.Client,
 					}else{
 						res = utils.Response{Code: iris.StatusOK,
 							Message: "ok", Data: iris.Map{"token": token}}
+						ctx.StatusCode(iris.StatusOK)
 					}
-					ctx.StatusCode(iris.StatusBadRequest)
 				}
 			}else{
 				checked, _ := utils.Verification(user.UserName, tokenCache)

@@ -35,3 +35,18 @@ func Str2md5(str string) (md5Str string){
 	md5Str = fmt.Sprintf("%x", h.Sum(nil))
 	return md5Str
 }
+
+// ListFilesRedisKey 生成列举文件redis缓存所需的key
+func ListFilesRedisKey(uuid string, path string,
+	delimiter string, userName string) (key string){
+	key = StringJoin(
+		"#", "listFiles", userName, uuid, path, delimiter)
+	return key
+}
+
+// ListDeleteMarkersRedisKey 生成列举删除标记redis缓存所需的key
+func ListDeleteMarkersRedisKey(uuid string, userName string) (key string){
+	key = StringJoin(
+		"#", "listDeleteMarkers", userName, uuid)
+	return key
+}

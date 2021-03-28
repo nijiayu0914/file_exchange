@@ -36,6 +36,7 @@ type RequestListFiles struct {
 	FileUuid string `json:"file_uuid"` // 文件uuid
 	Path     string `json:"path"` // 文件路径
 	Delimiter string `json:"delimiter"` // OSS路径终止符
+	Force bool `json:"force"` // 是否强制刷新
 }
 
 // RequestDeleteHistoryFile 删除历史文件请求实体，定义了文件uuid，文件路径，文件版本号
@@ -57,6 +58,12 @@ type RequestRenameObject struct {
 type RequestDeleteFiles struct {
 	FileUuid string `json:"file_uuid"` // 文件uuid
 	FileNames []string `json:"file_names"` // 删除文件的文件名数组
+}
+
+// RequestDeleteChildFile 删除子文件夹请求实体，定义了文件uuid，文件路径
+type RequestDeleteChildFile struct {
+	FileUuid string `json:"file_uuid"` // 文件uuid
+	Path     string `json:"path"` // 文件路径
 }
 
 // RequestCopy 拷贝文件请求实体，定义了源文件名称，目标文件名称，文件版本号

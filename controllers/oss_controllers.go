@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"file_exchange/services"
 	"file_exchange/utils"
+	"github.com/go-redis/redis"
 	"github.com/kataras/iris/v12"
 	"log"
 	"strings"
+	"time"
 )
 
 // CreateTestFile 创建测试文件
@@ -48,29 +51,66 @@ func CreateFolder (ctx iris.Context, ossOperator *services.OssOperator) {
 }
 
 // ListFiles 列举文件
-func ListFiles (ctx iris.Context, ossOperator *services.OssOperator) {
+func ListFiles (ctx iris.Context, ossOperator *services.OssOperator,
+	redisClient *redis.Client) {
+	userName := ctx.GetHeader("User-Name")
 	rqlf := utils.RequestListFiles{}
 	ctx.ReadJSON(&rqlf)
-	objectsContainer, dirsContainer, err := ossOperator.ListFiles(
-		rqlf.FileUuid, rqlf.Path, rqlf.Delimiter)
-	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest,
-			Message: "读取失败", Data: err.Error()}
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(res)
-	}else{
-		rplf := utils.ResponseListFiles{
+	var objectsContainer []utils.ObjectInfoCollection
+	var dirsContainer []utils.DirInfoCollection
+	var err error
+	rplf := utils.ResponseListFiles{}
+	if rqlf.Force == true{
+		objectsContainer, dirsContainer, err = ossOperator.ListFiles(
+			rqlf.FileUuid, rqlf.Path, rqlf.Delimiter)
+		rplf = utils.ResponseListFiles{
 			FilesCount: len(objectsContainer),
 			DirsCount: len(dirsContainer),
 			Files: objectsContainer,
 			Dirs: dirsContainer,
 		}
-		res := utils.Response{Code: iris.StatusOK,
-			Message: "读取成功", Data: &rplf}
-		ctx.StatusCode(iris.StatusOK)
-		ctx.JSON(res)
+		if err != nil{
+			res := utils.Response{Code: iris.StatusBadRequest,
+				Message: "读取失败", Data: err.Error()}
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(res)
+			return
+		}
+	}else{
+		key := utils.ListFilesRedisKey(rqlf.FileUuid, rqlf.Path,
+			rqlf.Delimiter, userName)
+		cacheListFiles, err := redisClient.Get(key).Result()
+		if err != nil{
+			objectsContainer, dirsContainer, err = ossOperator.ListFiles(
+				rqlf.FileUuid, rqlf.Path, rqlf.Delimiter)
+			rplf = utils.ResponseListFiles{
+				FilesCount: len(objectsContainer),
+				DirsCount: len(dirsContainer),
+				Files: objectsContainer,
+				Dirs: dirsContainer,
+			}
+		}else{
+			json.Unmarshal([]byte(cacheListFiles), &rplf)
+		}
 	}
-}
+	go func(){
+		key := utils.ListFilesRedisKey(rqlf.FileUuid, rqlf.Path,
+			rqlf.Delimiter, userName)
+		value, err := json.Marshal(rplf)
+		if err != nil{
+			log.Println("数据列表解析失败")
+		}
+		err = redisClient.Set(key, string(value), 240 * time.Hour).Err()
+		if err != nil{
+			log.Println("缓存数据列表失败")
+		}
+	}()
+	res := utils.Response{Code: iris.StatusOK,
+			Message: "读取成功", Data: &rplf}
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(res)
+	}
+
 
 // IsFileExist 检查文件是否存在
 func IsFileExist (ctx iris.Context, ossOperator *services.OssOperator) {
@@ -133,9 +173,9 @@ func DeleteFile (ctx iris.Context, ossOperator *services.OssOperator) {
 
 // DeleteChildFile 删除文件夹下文件夹
 func DeleteChildFile (ctx iris.Context, ossOperator *services.OssOperator) {
-	rqlf := utils.RequestListFiles{}
-	ctx.ReadJSON(&rqlf)
-	err := ossOperator.DeleteChildFile(rqlf.FileUuid, rqlf.Path)
+	rdf := utils.RequestDeleteChildFile{}
+	ctx.ReadJSON(&rdf)
+	err := ossOperator.DeleteChildFile(rdf.FileUuid, rdf.Path)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "删除失败", Data: err.Error()}
@@ -168,21 +208,58 @@ func DeleteFiles (ctx iris.Context, ossOperator *services.OssOperator) {
 }
 
 // ListDeleteMarkers 列举删除标记
-func ListDeleteMarkers (ctx iris.Context, ossOperator *services.OssOperator) {
+func ListDeleteMarkers (ctx iris.Context, ossOperator *services.OssOperator,
+	redisClient *redis.Client) {
+	userName := ctx.GetHeader("User-Name")
 	fileUuid := ctx.URLParam("uuid")
 	delimiter := ctx.URLParam("delimiter")
-	markers, err := ossOperator.ListDeleteMarkers(fileUuid, "", delimiter)
+	force, err := ctx.URLParamBool("force")
+	var markers []map[string]interface{}
 	if err != nil{
-		res := utils.Response{Code: iris.StatusBadRequest,
-			Message: "查询失败", Data: err.Error()}
-		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.JSON(res)
-	} else{
-		res := utils.Response{Code: iris.StatusOK,
-			Message: "查询成功", Data: markers}
-		ctx.StatusCode(iris.StatusOK)
-		ctx.JSON(res)
+		force = false
 	}
+	if force == true{
+		markers, err = ossOperator.ListDeleteMarkers(fileUuid, "", delimiter)
+		if err != nil{
+			res := utils.Response{Code: iris.StatusBadRequest,
+				Message: "查询失败", Data: err.Error()}
+			ctx.StatusCode(iris.StatusBadRequest)
+			ctx.JSON(res)
+			return
+		}
+	}else {
+		key := utils.ListDeleteMarkersRedisKey(fileUuid, userName)
+		cacheDeleteMarkers, err := redisClient.Get(key).Result()
+		if err != nil {
+			markers, err = ossOperator.ListDeleteMarkers(
+				fileUuid, "", delimiter)
+			if err != nil {
+				res := utils.Response{Code: iris.StatusBadRequest,
+					Message: "查询失败", Data: err.Error()}
+				ctx.StatusCode(iris.StatusBadRequest)
+				ctx.JSON(res)
+				return
+			}
+		}
+		json.Unmarshal([]byte(cacheDeleteMarkers), &markers)
+	}
+
+	go func(){
+		key := utils.ListDeleteMarkersRedisKey(fileUuid, userName)
+		value, err := json.Marshal(&markers)
+		if err != nil{
+			log.Println("删除列表解析失败")
+		}
+		err = redisClient.Set(key, string(value), 240 * time.Hour).Err()
+		if err != nil{
+			log.Println("缓存删除列表失败")
+		}
+	}()
+	res := utils.Response{Code: iris.StatusOK,
+		Message: "查询成功", Data: &markers}
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(res)
+
 }
 
 // ListFileVersion 列举文件版本
@@ -366,19 +443,19 @@ func MultipleCopy (ctx iris.Context, ossOperator *services.OssOperator,
 		return
 	}
 	failure, size, err := ossOperator.MultipleCopy(rqmc.CopyList)
-	go func() {
-		err := fileService.UpdateUsageCapacity(size, strings.Split(
-			rqmc.CopyList[0].OriginFile, "/")[0], "decrease")
-		if err != nil{
-			log.Println("更新容量失败")
-		}
-	}()
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,
 			Message: "复制失败", Data: failure}
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.JSON(res)
 	} else{
+		go func() {
+			err := fileService.UpdateUsageCapacity(size, strings.Split(
+				rqmc.CopyList[0].DestFile, "/")[0], "increase")
+			if err != nil{
+				log.Println("更新容量失败")
+			}
+		}()
 		res := utils.Response{Code: iris.StatusOK, Message: "复制成功"}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)

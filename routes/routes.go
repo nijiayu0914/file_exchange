@@ -168,8 +168,9 @@ func Routes(
 	// Params:
 	//	uuid: 文件夹uuid
 	//  delimiter: 查询终止符，可添加"/"仅查询当前文件夹下的删除标记
+	//  force: 是否强制
 	files.Get("/list_delete_markers", func(ctx iris.Context){
-		controllers.ListDeleteMarkers(ctx, ossOperator)
+		controllers.ListDeleteMarkers(ctx, ossOperator, redisClient)
 	})
 	// 列举文件版本
 	// Params:
@@ -185,7 +186,7 @@ func Routes(
 	// 读取所有文件大小
 	// Params:
 	//	uuid: 文件夹uuid
-	files.Get("/read_allfiles_size", func(ctx iris.Context){
+	files.Get("/read_all_files_size", func(ctx iris.Context){
 		controllers.ReadAllFilesCapacity(ctx, ossOperator)
 	})
 	// 检查当前用量
@@ -198,6 +199,7 @@ func Routes(
 	// 返回临时的文件下载url
 	// Params:
 	//	uuid: 文件夹uuid
+	//  file_name: 文件名称
 	files.Get("/download", func(ctx iris.Context){
 		controllers.DownloadUrl(ctx, ossOperator)
 	})
@@ -261,8 +263,9 @@ func Routes(
 	//	file_uuid: 文件uuid
 	//  path: 子文件路径
 	//  delimiter: 终止符
+	//  force: 是否强制
 	files.Post("/list_files", func(ctx iris.Context){
-		controllers.ListFiles(ctx, ossOperator)
+		controllers.ListFiles(ctx, ossOperator, redisClient)
 	})
 	// 删除多个文件
 	// Request Body:

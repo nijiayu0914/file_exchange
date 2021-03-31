@@ -14,6 +14,6 @@ WORKDIR /go/release
 ADD . .
 RUN go build -ldflags="-s -w" -o compile
 FROM scratch as prod
-COPY --from=build /go/release/compile /
+COPY --from=build /go/releasealiy/compile /
 EXPOSE 8080
 ENTRYPOINT ["/compile", "-config_type=http", "-config_path=http://192.168.0.130:7000/file_exchange/prod/config.yml"]

@@ -186,7 +186,7 @@ func Routes(
 	// 读取所有文件大小
 	// Params:
 	//	uuid: 文件夹uuid
-	files.Get("/read_allfiles_size", func(ctx iris.Context){
+	files.Get("/read_all_files_size", func(ctx iris.Context){
 		controllers.ReadAllFilesCapacity(ctx, ossOperator)
 	})
 	// 检查当前用量

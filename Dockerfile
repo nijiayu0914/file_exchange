@@ -13,7 +13,9 @@ RUN go mod download
 WORKDIR /go/release
 ADD . .
 RUN go build -ldflags="-s -w" -o compile
+
 FROM scratch as prod
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /go/release/compile /
 EXPOSE 8080
-ENTRYPOINT ["/compile", "-config_type=http", "-config_path=http://192.168.0.130:7000/file_exchange/prod/config.yml"]
+ENTRYPOINT ["/compile", "-config_type=http", "-config_path=http://192.168.0.132:7000/file_exchange/prod/config.yml"]

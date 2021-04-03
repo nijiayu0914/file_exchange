@@ -40,10 +40,20 @@ func (u *UserManagerRepository) Select(userName string) (
 // Insert 新增用户
 func (u *UserManagerRepository) Insert(user *datamodels.User) (
 	tableId uint, err error) {
-	result := u.db.Create(user)
+	tx := u.db.Begin()
+	result := tx.Create(user)
 	if result.Error != nil{
+		tx.Rollback()
 		return user.ID, errors.New("用户名重复")
 	}
+	var userPlugin datamodels.UserPlugin
+	userPlugin.UserName = user.UserName
+	result = tx.Create(&userPlugin)
+	if result.Error != nil{
+		tx.Rollback()
+		return user.ID, errors.New("用户配置创建失败")
+	}
+	tx.Commit()
 	return user.ID, nil
 }
 
@@ -57,6 +67,7 @@ func (u *UserManagerRepository) SelectAll() (
 	return users, nil
 }
 
+// Update 更新用户信息
 func (u *UserManagerRepository) Update(user *datamodels.User) (userId uint, err error) {
 	result := u.db.Save(user)
 	if result.Error != nil{

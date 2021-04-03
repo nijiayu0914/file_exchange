@@ -17,6 +17,13 @@ func RegisterUserCollercors(db *gorm.DB) services.IUserService{
 	return service
 }
 
+// RegisterFileCollercors 注册用户配置控制器
+func RegisterUserPluginCollercors(db *gorm.DB) services.IUserPluginService{
+	repository := repositories.NewUserPluginRepository(db)
+	service := services.NewUserPluginService(repository)
+	return service
+}
+
 // RegisterFileCollercors 注册文件控制器
 func RegisterFileCollercors(db *gorm.DB) services.IFileService{
 	repository := repositories.NewFileRepository(db)
@@ -35,6 +42,7 @@ func Routes(
 	admin := otherConfig["Admin"].(string) // 超级管理员用户名
 	adminPassword := otherConfig["AdminPassword"].(string) // 超级管理员密码
 	userService := RegisterUserCollercors(db) // 用户服务
+	userPluginService := RegisterUserPluginCollercors(db)  // 用户配置服务
 	fileService := RegisterFileCollercors(db) // 文件服务
 
 	// 服务状态健康检查
@@ -95,6 +103,40 @@ func Routes(
 	users.Post("/reset_password", func(ctx iris.Context){
 		userController := controllers.UserController{UserService: userService}
 		userController.ResetPassword(ctx)
+	})
+
+	// 用户配置相关API根路由
+	userPlugins := app.Party("/user_plugin",
+		// token检查
+		// Header:
+		//	Authorization: token
+		//  User-Name: 用户名
+		func(ctx iris.Context){
+			userController := controllers.UserController{
+				UserService: userService}
+			userController.CheckToken(ctx, redisClient)
+		})
+	// 获取用户配置信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	userPlugins.Get("/read", func(ctx iris.Context){
+		userPluginController := controllers.UserPluginController{
+			UserPluginService: userPluginService}
+		userPluginController.Read(ctx)
+	})
+
+	// 分页获取所有用户配置信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	// Params:
+	//	page: 页码
+	//  page_size: 每页大小，最大值100
+	userPlugins.Get("/read_all", func(ctx iris.Context){
+		userPluginController := controllers.UserPluginController{
+			UserPluginService: userPluginService}
+		userPluginController.Read(ctx)
 	})
 
 	// 文件相关API根路由

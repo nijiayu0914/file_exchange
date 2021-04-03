@@ -28,6 +28,27 @@ func Db(dbType interface{}, dbDsn interface{})(db *gorm.DB, err error){
 	return db, err
 }
 
+// Paginate gorm 分页器
+// param page: 页码
+// param pageSize: 每页大小
+func Paginate(page int, pageSize int) func(db *gorm.DB) *gorm.DB {
+	return func (db *gorm.DB) *gorm.DB {
+		if page == 0 {
+			page = 1
+		}
+
+		switch {
+		case pageSize > 100:
+			pageSize = 100
+		case pageSize <= 0:
+			pageSize = 10
+		}
+
+		offset := (page - 1) * pageSize
+		return db.Offset(offset).Limit(pageSize)
+	}
+}
+
 // RedisCache 初始化Redis Client
 // param redisDsn 地址
 // param redisPassword 数据库密码

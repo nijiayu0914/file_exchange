@@ -11,6 +11,9 @@ import (
 type IFileService interface {
 	FindFilesByUserName(userName string) (files[] map[string]interface{}, err error)
 	FindFileByUuid(fileUuid string) (file *datamodels.File, err error)
+	FindByPaginate(page int, pageSize int, keyWord string) (
+		files []datamodels.File, err error)
+	Count(keyWord string) (count int64, err error)
 	CreateFile(file *datamodels.File) (fileId uint, fileUuid string, err error)
 	UpdateFileName(fileName string, uuid string) (err error)
 	UpdateUsageCapacity(usageCapacity float64, uuid string, how string) (err error)
@@ -28,6 +31,17 @@ func NewFileService(repository repositories.IFileRepository) IFileService {
 // FileService file服务操作对象
 type FileService struct {
 	FileRepository repositories.IFileRepository
+}
+
+// FindByPaginate 分页查询用户配置
+func (f *FileService) FindByPaginate(page int, pageSize int, keyWord string) (
+	files []datamodels.File, err error) {
+	return  f.FileRepository.SelectPaginate(page, pageSize, keyWord)
+}
+
+// Count file表计数
+func (f *FileService) Count(keyWord string) (count int64, err error) {
+	return f.FileRepository.Count(keyWord)
 }
 
 // CreateFile 创建文件夹

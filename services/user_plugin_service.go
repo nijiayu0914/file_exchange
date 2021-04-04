@@ -8,9 +8,9 @@ import (
 // IUserPluginService UserPlugin服务接口
 type IUserPluginService interface {
 	FindByUserName(userName string) (userPlugin *datamodels.UserPlugin, err error)
-	FindByPaginate(page int, pageSize int) (
+	FindByPaginate(page int, pageSize int, keyWord string) (
 		userPlugins []datamodels.UserPlugin, err error)
-	Count() (count int64, err error)
+	Count(keyWord string) (count int64, err error)
 	UpdateMaxLibrary(userName string, maxLibrary int) (err error)
 	UpdatePermission(userName string, permission int16) (err error)
 }
@@ -31,15 +31,15 @@ func (u *UserPluginService) FindByUserName(userName string) (
 	return u.UserPluginRepository.Select(userName)
 }
 
-// FindByUserNamePaginate 分页查询用户配置
-func (u *UserPluginService) FindByPaginate(page int, pageSize int) (
+// FindByPaginate 分页查询用户配置
+func (u *UserPluginService) FindByPaginate(page int, pageSize int, keyWord string) (
 	userPlugins []datamodels.UserPlugin, err error) {
-	return  u.UserPluginRepository.SelectPaginate(page, pageSize)
+	return  u.UserPluginRepository.SelectPaginate(page, pageSize, keyWord)
 }
 
 // Count user_plugin表计数
-func (u *UserPluginService) Count() (count int64, err error) {
-	return u.UserPluginRepository.Count()
+func (u *UserPluginService) Count(keyWord string) (count int64, err error) {
+	return u.UserPluginRepository.Count(keyWord)
 }
 
 // UpdateMaxLibrary 更新用户library最大数量

@@ -11,9 +11,9 @@ import (
 type IUserPluginRepository interface {
 	Insert(user *datamodels.UserPlugin) (userPluginId uint, err error)
 	Select(userName string) (userPlugin *datamodels.UserPlugin, err error)
-	SelectPaginate(page int, pageSize int) (
+	SelectPaginate(page int, pageSize int, keyWord string) (
 		userPlugins []datamodels.UserPlugin, err error)
-	Count() (count int64, err error)
+	Count(keyWord string) (count int64, err error)
 	UpdateMaxLibrary(userName string, maxLibrary int) (err error)
 	UpdatePermission(userName string, permission int16) (err error)
 }
@@ -50,19 +50,21 @@ func (u *UserPluginManagerRepository) Select(userName string) (
 }
 
 // Count user_plugin表计数
-func (u *UserPluginManagerRepository) Count() (count int64, err error) {
-	result := u.db.Model(&datamodels.UserPlugin{}).Count(&count)
+func (u *UserPluginManagerRepository) Count(keyWord string) (count int64, err error) {
+	result := u.db.Model(&datamodels.UserPlugin{}).Where(
+		"user_name LIKE ?", "%" + keyWord + "%").Count(&count)
 	if result.Error != nil{
 		return 0, result.Error
 	}
 	return count, nil
 }
 
-// SelectByUserNamePaginate 分页查询用户配置
+// SelectPaginate 分页查询用户配置
 func (u *UserPluginManagerRepository) SelectPaginate(
-	page int, pageSize int) (
+	page int, pageSize int, keyWord string) (
 	userPlugins []datamodels.UserPlugin, err error) {
-	result := u.db.Scopes(utils.Paginate(page, pageSize)).Find(&userPlugins)
+	result := u.db.Scopes(utils.Paginate(page, pageSize)).Where(
+		"user_name LIKE ?", "%" + keyWord + "%").Find(&userPlugins)
 	if result.Error != nil{
 		return userPlugins, result.Error
 	}

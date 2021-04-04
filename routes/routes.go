@@ -123,7 +123,7 @@ func Routes(
 	userPlugins.Get("/read", func(ctx iris.Context){
 		userPluginController := controllers.UserPluginController{
 			UserPluginService: userPluginService}
-		userPluginController.Read(ctx)
+		userPluginController.Read(ctx, admin)
 	})
 
 	// 分页获取所有用户配置信息
@@ -133,11 +133,61 @@ func Routes(
 	// Params:
 	//	page: 页码
 	//  page_size: 每页大小，最大值100
-	userPlugins.Get("/read_all", func(ctx iris.Context){
+	//  key_word: 模糊查找字段
+	userPlugins.Get("/read_all",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
 		userPluginController := controllers.UserPluginController{
 			UserPluginService: userPluginService}
-		userPluginController.Read(ctx)
+		userPluginController.ReadAll(ctx)
 	})
+
+	userPlugins.Get("/read_files",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			fileController := controllers.FileController{FileService: fileService}
+			fileController.ReadAll(ctx)
+		})
+
+	// 更新用户权限
+	// Request Body:
+	//	user_name: 用户名
+	//  permission: 权限等级
+	userPlugins.Put("/update_permission",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.UpdatePermission(ctx)
+		})
+
+	// 更新用户Library数量
+	// Request Body:
+	//	user_name: 用户名
+	//  max_library: library数量
+	userPlugins.Put("/update_library",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.UpdateMaxLibrary(ctx)
+		})
 
 	// 文件相关API根路由
 	files := app.Party("/file",

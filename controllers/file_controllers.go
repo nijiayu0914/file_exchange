@@ -56,6 +56,38 @@ func (fc *FileController) CheckUuid(ctx iris.Context,
 	ctx.Next()
 }
 
+// ReadAll 分页读取所有用户配置信息
+func (fc *FileController) ReadAll (ctx iris.Context){
+	page, err := ctx.URLParamInt("page")
+	if err != nil{
+		page = 1
+	}
+	pageSize, err := ctx.URLParamInt("page_size")
+	if err != nil{
+		pageSize = 1
+	}
+	keyWord := ctx.URLParam("key_word")
+	files, errFiles := fc.FileService.FindByPaginate(
+		page, pageSize, keyWord)
+	count, errCount := fc.FileService.Count(keyWord)
+	if errFiles != nil || errCount != nil{
+		res := utils.Response{Code: iris.StatusBadRequest,
+			Message: "查询失败", Data: nil}
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK, Message: "ok", Data: iris.Map{
+			"count": &count,
+			"page": &page,
+			"page_size": &pageSize,
+			"key_word": &keyWord,
+			"files": &files,
+		}}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
 // CreateFile 创建文件夹
 func (fc *FileController) CreateFile (ctx iris.Context, capacity float64){
 	file:= datamodels.File{}

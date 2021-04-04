@@ -85,7 +85,8 @@ func main()  {
 	if err != nil {
 		panic("failed to connect database")
 	}else{
-		db.AutoMigrate(&datamodels.User{}, &datamodels.File{})
+		db.AutoMigrate(&datamodels.User{}, &datamodels.File{},
+		&datamodels.UserPlugin{})
 	}
 
 	// 初始化redis

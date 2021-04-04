@@ -18,6 +18,18 @@ type RequestResetPassword struct {
 	NewPassword string `json:"new_password"` // 新密码
 }
 
+// RequestUpdatePermission   更新用户权限等级请求实体，定义了用户名和新等级
+type RequestUpdatePermission struct {
+	UserName string `json:"user_name"` // 用户名
+	Permission int16 `json:"permission"` // 新权限等级
+}
+
+// RequestUpdateMaxLibrary   更新用户Library最大数量请求实体，定义了用户名和新数量
+type RequestUpdateMaxLibrary struct {
+	UserName string `json:"user_name"` // 用户名
+	MaxLibrary int `json:"max_library"` // 新权限等级
+}
+
 // RequestUpdateUsage 更新网盘用量请求实体，定义了文件uuid，更新用量值和更新方式
 type RequestUpdateUsage struct {
 	FileUuid string `json:"file_uuid"` // 文件uuid

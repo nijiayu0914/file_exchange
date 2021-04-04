@@ -3,6 +3,7 @@ package repositories
 import (
 	"errors"
 	"file_exchange/datamodels"
+	"file_exchange/utils"
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,9 @@ type IFileRepository interface {
 	SelectByUserName(userName string) (
 		files[] map[string]interface{}, err error)
 	SelectByFileUuid(fileUuid string) (file *datamodels.File, err error)
+	SelectPaginate(page int, pageSize int, keyWord string) (
+		files []datamodels.File, err error)
+	Count(keyWord string) (count int64, err error)
 	Insert(file *datamodels.File) (fileId uint, fileUuid string, err error)
 	UpdateFileName(fileName string, uuid string) (err error)
 	UpdateUsageCapacity(usageCapacity float64, uuid string) (err error)
@@ -49,6 +53,32 @@ func (f *FileManagerRepository) SelectByFileUuid(fileUuid string) (
 		return &file, result.Error
 	}
 	return &file, nil
+}
+
+// SelectPaginate 分页查询用户Library
+func (f *FileManagerRepository) SelectPaginate(
+	page int, pageSize int, keyWord string) (
+	files []datamodels.File, err error) {
+	result := f.db.Scopes(utils.Paginate(page, pageSize)).Where(
+		"user_name LIKE ?", "%" + keyWord + "%").Or(
+		"file_name LIKE ?", "%" + keyWord + "%").Or(
+		"uuid LIKE ?", keyWord + "%").Find(&files)
+	if result.Error != nil{
+		return files, result.Error
+	}
+	return files, nil
+}
+
+// Count file表计数
+func (f *FileManagerRepository) Count(keyWord string) (count int64, err error) {
+	result := f.db.Model(&datamodels.File{}).Where(
+		"user_name LIKE ?", "%" + keyWord + "%").Or(
+		"file_name LIKE ?", "%" + keyWord + "%").Or(
+		"uuid LIKE ?", keyWord + "%").Count(&count)
+	if result.Error != nil{
+		return 0, result.Error
+	}
+	return count, nil
 }
 
 // Insert 新增文件夹

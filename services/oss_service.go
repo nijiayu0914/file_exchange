@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"file_exchange/utils"
+	"fmt"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/sts"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"math"
@@ -231,6 +232,7 @@ func(os *OssOperator) ListFileVersion (fileUuid string,
 		lor, err := os.Bucket.ListObjectVersions(prefix, keyMarker,
 			delimiter, versionIdMarker)
 		if err != nil {
+			fmt.Println(333)
 			return nil, err
 		}
 		for _, obj  := range lor.ObjectVersions {
@@ -328,6 +330,9 @@ func(os *OssOperator) DeleteFileForever(
 		delSize, _ := os.ReadFileCapacity(
 			deleteObj["key"].(string), deleteObj["versionId"].(string))
 		size += delSize
+	}
+	if len(delObjects) ==  0 {
+		return size, nil
 	}
 	_, err = os.Bucket.DeleteObjectVersions(delObjects)
 	if err != nil {

@@ -10,5 +10,5 @@ type File struct {
 	Capacity float64 `gorm:"default:0" json:"capacity"` // 文件存储最大容量限制
 	UsageCapacity float64 `gorm:"default:0" json:"usage_capacity"` // 已用容量
 	UserName string `gorm:"size:50" json:"user_name"` // 文件夹归属用户
-	User     User `gorm:"foreignKey:UserName; references:UserName;"` // 对应用户
+	User     User `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;foreignKey:UserName; references:UserName;"` // 对应用户
 }

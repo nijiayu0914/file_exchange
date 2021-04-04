@@ -17,6 +17,13 @@ func RegisterUserCollercors(db *gorm.DB) services.IUserService{
 	return service
 }
 
+// RegisterFileCollercors 注册用户配置控制器
+func RegisterUserPluginCollercors(db *gorm.DB) services.IUserPluginService{
+	repository := repositories.NewUserPluginRepository(db)
+	service := services.NewUserPluginService(repository)
+	return service
+}
+
 // RegisterFileCollercors 注册文件控制器
 func RegisterFileCollercors(db *gorm.DB) services.IFileService{
 	repository := repositories.NewFileRepository(db)
@@ -35,6 +42,7 @@ func Routes(
 	admin := otherConfig["Admin"].(string) // 超级管理员用户名
 	adminPassword := otherConfig["AdminPassword"].(string) // 超级管理员密码
 	userService := RegisterUserCollercors(db) // 用户服务
+	userPluginService := RegisterUserPluginCollercors(db)  // 用户配置服务
 	fileService := RegisterFileCollercors(db) // 文件服务
 
 	// 服务状态健康检查
@@ -96,6 +104,90 @@ func Routes(
 		userController := controllers.UserController{UserService: userService}
 		userController.ResetPassword(ctx)
 	})
+
+	// 用户配置相关API根路由
+	userPlugins := app.Party("/user_plugin",
+		// token检查
+		// Header:
+		//	Authorization: token
+		//  User-Name: 用户名
+		func(ctx iris.Context){
+			userController := controllers.UserController{
+				UserService: userService}
+			userController.CheckToken(ctx, redisClient)
+		})
+	// 获取用户配置信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	userPlugins.Get("/read", func(ctx iris.Context){
+		userPluginController := controllers.UserPluginController{
+			UserPluginService: userPluginService}
+		userPluginController.Read(ctx, admin)
+	})
+
+	// 分页获取所有用户配置信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	// Params:
+	//	page: 页码
+	//  page_size: 每页大小，最大值100
+	//  key_word: 模糊查找字段
+	userPlugins.Get("/read_all",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+		userPluginController := controllers.UserPluginController{
+			UserPluginService: userPluginService}
+		userPluginController.ReadAll(ctx)
+	})
+
+	userPlugins.Get("/read_files",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			fileController := controllers.FileController{FileService: fileService}
+			fileController.ReadAll(ctx)
+		})
+
+	// 更新用户权限
+	// Request Body:
+	//	user_name: 用户名
+	//  permission: 权限等级
+	userPlugins.Put("/update_permission",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.UpdatePermission(ctx)
+		})
+
+	// 更新用户Library数量
+	// Request Body:
+	//	user_name: 用户名
+	//  max_library: library数量
+	userPlugins.Put("/update_library",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.UpdateMaxLibrary(ctx)
+		})
 
 	// 文件相关API根路由
 	files := app.Party("/file",

@@ -516,3 +516,13 @@ func(os *OssOperator) DownloadFile(fileUuid string,
 	}
 	return signedURL, nil
 }
+
+// GetBucketInfo 获取Bucket生命周期配置
+func(os *OssOperator) GetBucketInfo () (
+	lcRes oss.GetBucketLifecycleResult, err error){
+	lcRes, err = os.Client.GetBucketLifecycle(os.OSSBucketName)
+	if err != nil{
+		return lcRes, err
+	}
+	return lcRes, nil
+}

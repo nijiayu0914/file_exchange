@@ -146,6 +146,14 @@ func Routes(
 		userPluginController.ReadAll(ctx)
 	})
 
+	// 分页获取所有Library信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	// Params:
+	//	page: 页码
+	//  page_size: 每页大小，最大值100
+	//  key_word: 模糊查找字段
 	userPlugins.Get("/read_files",
 		func(ctx iris.Context){
 			userPluginController := controllers.UserPluginController{
@@ -155,6 +163,20 @@ func Routes(
 		func(ctx iris.Context){
 			fileController := controllers.FileController{FileService: fileService}
 			fileController.ReadAll(ctx)
+		})
+
+	// 获取bucket信息
+	// Header:
+	//	Authorization: token
+	//  User-Name: 用户名
+	userPlugins.Get("/bucket_info",
+		func(ctx iris.Context){
+			userPluginController := controllers.UserPluginController{
+				UserPluginService: userPluginService}
+			userPluginController.CheckPermission(ctx, admin)
+		},
+		func(ctx iris.Context){
+			controllers.GetBucketInfo(ctx, ossOperator)
 		})
 
 	// 更新用户权限
@@ -206,7 +228,7 @@ func Routes(
 		func(ctx iris.Context){
 			fileController := controllers.FileController{
 				FileService: fileService}
-			fileController.CheckUuid(ctx, fileService)
+			fileController.CheckUuid(ctx, admin, fileService)
 		})
 	// 更改根文件夹（用户级）名称，并分配uuid
 	// Params:

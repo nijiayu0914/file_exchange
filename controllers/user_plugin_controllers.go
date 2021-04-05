@@ -17,6 +17,7 @@ func (upc *UserPluginController) CheckPermission(
 	userName := ctx.GetHeader("User-Name")
 	if userName == admin{
 		ctx.Next()
+		return
 	}
 	userPlugin, err := upc.UserPluginService.FindByUserName(userName)
 	if err != nil {
@@ -40,6 +41,15 @@ func (upc *UserPluginController) CheckPermission(
 // Read 读取单个用户配置信息
 func (upc *UserPluginController) Read (ctx iris.Context, admin string){
 	userName := ctx.GetHeader("User-Name")
+	if userName == admin{
+		res := utils.Response{Code: iris.StatusOK, Message: "ok", Data: iris.Map{
+			"user_plugin": nil,
+			"admin_name": admin,
+		}}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+		return
+	}
 	userPlugin, err := upc.UserPluginService.FindByUserName(userName)
 	if err != nil{
 		res := utils.Response{Code: iris.StatusBadRequest,

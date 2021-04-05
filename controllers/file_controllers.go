@@ -13,7 +13,7 @@ type FileController struct {
 }
 
 // CheckUuid 检查uuid，用户与用户之间进行隔离，防止非法访问
-func (fc *FileController) CheckUuid(ctx iris.Context,
+func (fc *FileController) CheckUuid(ctx iris.Context, admin string,
 	fileService services.IFileService){
 	var rquuid = utils.RequestCheckUuid{}
 	userName := ctx.GetHeader("User-Name")
@@ -28,7 +28,7 @@ func (fc *FileController) CheckUuid(ctx iris.Context,
 			ctx.JSON(res)
 			return
 		}
-		if file.UserName != userName{
+		if file.UserName != userName && userName != admin{
 			res := utils.Response{Code: iris.StatusForbidden,
 				Message: "用户匹配错误"}
 			ctx.StatusCode(iris.StatusForbidden)
@@ -45,7 +45,7 @@ func (fc *FileController) CheckUuid(ctx iris.Context,
 			ctx.JSON(res)
 			return
 		}
-		if file.UserName != userName{
+		if file.UserName != userName && userName != admin{
 			res := utils.Response{Code: iris.StatusForbidden,
 				Message: "用户匹配错误"}
 			ctx.StatusCode(iris.StatusForbidden)

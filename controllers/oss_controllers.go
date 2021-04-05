@@ -287,7 +287,7 @@ func DeleteFileForever (ctx iris.Context, ossOperator *services.OssOperator,
 	fileName := ctx.URLParam("file_name")
 	size, err := ossOperator.DeleteFileForever(fileUuid, fileName)
 	go func() {
-		err := fileService.UpdateUsageCapacity(size, fileUuid, "increase")
+		err := fileService.UpdateUsageCapacity(size, fileUuid, "decrease")
 		if err != nil{
 			log.Println("更新容量失败")
 		}
@@ -312,7 +312,7 @@ func DeleteFilesForever (ctx iris.Context, ossOperator *services.OssOperator,
 	size, err := ossOperator.DeleteFilesForever(rqdfs.FileUuid, rqdfs.FileNames)
 	go func() {
 		err := fileService.UpdateUsageCapacity(size,
-			rqdfs.FileUuid, "increase")
+			rqdfs.FileUuid, "decrease")
 		if err != nil{
 			log.Println("更新容量失败")
 		}
@@ -515,7 +515,8 @@ func CreateSTS (ctx iris.Context, ossOperator *services.OssOperator) {
 }
 
 // DownloadUrl 获取临时文件下载地址
-func DownloadUrl (ctx iris.Context, ossOperator *services.OssOperator) {
+func DownloadUrl (ctx iris.Context,
+	ossOperator *services.OssOperator) {
 	fileUuid := ctx.URLParam("uuid")
 	fileName := ctx.URLParam("file_name")
 	url, err := ossOperator.DownloadFile(fileUuid, fileName)
@@ -527,6 +528,23 @@ func DownloadUrl (ctx iris.Context, ossOperator *services.OssOperator) {
 	}else{
 		res := utils.Response{Code: iris.StatusOK,
 			Message: "授权成功", Data: url}
+		ctx.StatusCode(iris.StatusOK)
+		ctx.JSON(res)
+	}
+}
+
+// GetBucketInfo 获取Bucket生命周期配置
+func GetBucketInfo (ctx iris.Context, ossOperator *services.OssOperator){
+	lcRes, err := ossOperator.GetBucketInfo()
+	if err != nil{
+		res := utils.Response{Code: iris.StatusForbidden,
+			Message: "查询失败", Data: err.Error()}
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.JSON(res)
+	}else{
+		res := utils.Response{Code: iris.StatusOK,
+			Message: "查询成功", Data: iris.Map{
+			"historyclear_days": lcRes.Rules[0].NonVersionExpiration.NoncurrentDays}}
 		ctx.StatusCode(iris.StatusOK)
 		ctx.JSON(res)
 	}

@@ -24,3 +24,4 @@ Other:
   OSSRamAccessKeySecret: yUrvYyoS*********fA9YzeY2G
   OSSRoleArn: "acs:ram::1527******086864:role/rule"
   OSSRoleSessionName: anystring
+  OtherPlugins: {"record_info": true, "icp": "沪ICP备15099999号", "police": "沪公网安备000000号"}

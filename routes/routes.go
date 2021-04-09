@@ -41,6 +41,7 @@ func Routes(
 	){
 	admin := otherConfig["Admin"].(string) // 超级管理员用户名
 	adminPassword := otherConfig["AdminPassword"].(string) // 超级管理员密码
+	otherPlugins := otherConfig["OtherPlugins"] // 其他配置信息
 	userService := RegisterUserCollercors(db) // 用户服务
 	userPluginService := RegisterUserPluginCollercors(db)  // 用户配置服务
 	fileService := RegisterFileCollercors(db) // 文件服务
@@ -50,6 +51,11 @@ func Routes(
 	//	message: 状态正常
 	app.Get("/health", func(ctx iris.Context){
 		ctx.JSON(iris.Map{"message": "状态正常"})
+	})
+
+	// 获取相关参数配置，如网站备案ICP等
+	app.Get("/plugins", func(ctx iris.Context) {
+		ctx.JSON(otherPlugins)
 	})
 
 	// 用户相关API根路由

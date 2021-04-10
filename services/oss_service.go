@@ -489,6 +489,9 @@ func(os *OssOperator) ReadAllFilesCapacity(fileUuid string) (
 	objects, _, _ := os.ListFiles(fileUuid, "", "")
 	for _, obj := range objects{
 		fileName := strings.Replace(obj.Basic.Key, fileUuid + "/", "", -1)
+		if fileName[len(fileName) -1 : ][0] == '/'{
+			continue
+		}
 		objectsVs, err := os.ListFileVersion(fileUuid, fileName)
 		if err != nil{
 			return 0, err
